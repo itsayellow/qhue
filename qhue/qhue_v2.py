@@ -26,10 +26,11 @@ class ResourceV2(object):
     When you call a ResourceV2, you are making a request to that URL with some
     parameters.
     """
+
     def __init__(self, url, session, timeout=_DEFAULT_TIMEOUT, object_pairs_hook=None):
         self.url = url
         self.session = session
-        self.address = url[url.find("/api"):]
+        self.address = url[url.find("/api") :]
         # Also find the bit after the username, if there is one
         self.short_address = None
         post_username_match = re.search(r"/api/[^/]*(.*)", url)
@@ -41,8 +42,6 @@ class ResourceV2(object):
     def __call__(self, *args, **kwargs):
         # Preprocess args and kwargs
         url = self.url
-        for a in args:
-            url += "/" + str(a)
         http_method = kwargs.pop("http_method", "get" if not kwargs else "put").lower()
 
         # From each keyword, strip one trailing underscore if it exists,
@@ -51,15 +50,21 @@ class ResourceV2(object):
         # or with the specially-handled keyword "http_method".
         kwargs = {(k[:-1] if k.endswith("_") else k): v for k, v in kwargs.items()}
         if http_method == "put":
-            r = self.session.put(url, data=json.dumps(kwargs, default=list), timeout=self.timeout)
+            r = self.session.put(
+                url, data=json.dumps(kwargs, default=list), timeout=self.timeout
+            )
         elif http_method == "post":
-            r = self.session.post(url, data=json.dumps(kwargs, default=list), timeout=self.timeout)
+            r = self.session.post(
+                url, data=json.dumps(kwargs, default=list), timeout=self.timeout
+            )
         elif http_method == "delete":
             r = self.session.delete(url, timeout=self.timeout)
         else:
             r = self.session.get(url, timeout=self.timeout)
         if r.status_code != 200:
-            raise QhueExceptionV2("Received response {c} from {u}".format(c=r.status_code, u=url))
+            raise QhueExceptionV2(
+                "Received response {c} from {u}".format(c=r.status_code, u=url)
+            )
         resp = r.json(object_pairs_hook=self.object_pairs_hook)
         if type(resp) == list:
             # In theory, you can get more than one error from a single call
@@ -67,12 +72,12 @@ class ResourceV2(object):
             errors = [m["error"] for m in resp if "error" in m]
             if errors:
                 # In general, though, there will only be one error per call
-                # so we return the type and address of the first one in the 
+                # so we return the type and address of the first one in the
                 # exception, to keep the exception type simple.
                 raise QhueExceptionV2(
                     message=",".join(e["description"] for e in errors),
                     type_id=",".join(str(e["type"]) for e in errors),
-                    address=errors[0]['address']
+                    address=errors[0]["address"],
                 )
         return resp
 
@@ -126,6 +131,7 @@ class BridgeV2(ResourceV2):
     It is the basis for building other Resources that represent the things
     managed by that BridgeV2.
     """
+
     def __init__(self, ip, username, timeout=_DEFAULT_TIMEOUT, object_pairs_hook=None):
         """
         Create a new connection to a hue bridge.
@@ -145,7 +151,9 @@ class BridgeV2(ResourceV2):
         self.username = username
         url = _local_api_url_v2(ip, username)
         self.session = requests.Session()
-        super().__init__(url, self.session, timeout=timeout, object_pairs_hook=object_pairs_hook)
+        super().__init__(
+            url, self.session, timeout=timeout, object_pairs_hook=object_pairs_hook
+        )
 
 
 class QhueExceptionV2(Exception):
@@ -157,4 +165,4 @@ class QhueExceptionV2(Exception):
         super().__init__(self.message)
 
     def __str__(self):
-        return f'QhueExceptionV2: {self.type_id} -> {self.message}'
+        return f"QhueExceptionV2: {self.type_id} -> {self.message}"
