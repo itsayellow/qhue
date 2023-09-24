@@ -91,9 +91,7 @@ class ResourceV2(object):
 
 
 def _local_api_url_v2(ip, username=None):
-    if username is None:
-        return "http://{}/api".format(ip)
-    return "http://{}/api/{}".format(ip, username)
+    return f"https://{ip}/clip/v2/resource".format(ip)
 
 
 def create_new_username_v2(ip, devicetype=None, timeout=_DEFAULT_TIMEOUT):
